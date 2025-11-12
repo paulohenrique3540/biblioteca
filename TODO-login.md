@@ -1,0 +1,11 @@
+- [x] Add Spring Security dependency to pom.xml
+- [x] Create Usuario entity with username, password, role
+- [x] Create UsuarioRepository interface
+- [x] Create LoginController for handling login requests
+- [x] Create login.html template with username/password form
+- [x] Create login.css for styling
+- [x] Add SQL script to create usuarios table in codmy.sql
+- [x] Create WebSecurityConfig for Spring Security configuration
+- [x] Update application.properties for security settings if needed
+- [x] Fix password encoding in database (use BCrypt hashed password)
+- [x] Test login functionality

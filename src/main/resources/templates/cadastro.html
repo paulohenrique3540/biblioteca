@@ -1,0 +1,349 @@
+<!-- Esta página HTML é um template Thymeleaf para o cadastro de livros no sistema de biblioteca -->
+<!-- Ela exibe um formulário onde o usuário pode inserir detalhes de um novo livro -->
+<!-- e automaticamente preenche o campo RFID via Socket.IO quando uma tag é lida -->
+<!DOCTYPE html>
+<!-- Define o idioma da página como português brasileiro e declara o namespace Thymeleaf -->
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- Define a codificação de caracteres como UTF-8 para suporte a caracteres especiais -->
+    <meta charset="UTF-8">
+    <!-- Configura a viewport para responsividade em dispositivos móveis -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título da página exibido na aba do navegador -->
+    <title>Cadastro de Livro</title>
+    <!-- Link para o arquivo CSS que estiliza a página de cadastro -->
+    <link rel="stylesheet" href="/css/cadastro.css">
+</head>
+<body>
+    <!-- Container principal que envolve todo o conteúdo da página -->
+    <div class="container">
+        <!-- Cabeçalho da página com título e subtítulo -->
+        <div class="header">
+            <!-- Título principal da página com ícone -->
+            <h1>📝 Cadastro</h1>
+            <!-- Subtítulo explicativo -->
+            <p class="subtitle">Adicione um novo livro ou aluno ao sistema</p>
+            <!-- Botões para escolher tipo de cadastro -->
+            <div class="cadastro-buttons">
+                <button type="button" class="btn-small" onclick="window.location.href='/cadastro'">Livro</button>
+                <button type="button" class="btn-small" onclick="window.location.href='/cadastro-aluno'">Aluno</button>
+            </div>
+        </div>
+
+        <!-- Container do formulário de cadastro -->
+        <div class="form-container">
+            <!-- Formulário que envia dados para o endpoint /cadastro via POST -->
+            <!-- th:object="${livro}" vincula o formulário ao objeto Livro passado pelo controlador -->
+            <form th:action="@{/cadastro}" method="post" th:object="${livro}" class="cadastro-form">
+                <!-- Linha do formulário com dois campos lado a lado -->
+                <div class="form-row">
+                    <!-- Grupo de formulário para o número de tombo -->
+                    <div class="form-group">
+                        <!-- Rótulo para o campo de entrada -->
+                        <label for="numeroTombo">Número de Tombo:</label>
+                        <!-- Campo de entrada vinculado ao campo numeroTombo do objeto Livro -->
+                        <input type="text" th:field="*{numeroTombo}" required>
+                    </div>
+
+                    <!-- Grupo de formulário para o nome do autor -->
+                    <div class="form-group">
+                        <!-- Rótulo para o campo de entrada -->
+                        <label for="nomeAutor">Nome do Autor:</label>
+                        <!-- Campo de entrada vinculado ao campo nomeAutor do objeto Livro -->
+                        <input type="text" th:field="*{nomeAutor}" required>
+                    </div>
+                </div>
+
+                <!-- Segunda linha do formulário -->
+                <div class="form-row">
+                    <!-- Grupo de formulário para o nome do livro -->
+                    <div class="form-group">
+                        <!-- Rótulo para o campo de entrada -->
+                        <label for="nomeLivro">Nome do Livro:</label>
+                        <!-- Campo de entrada vinculado ao campo nomeLivro do objeto Livro -->
+                        <input type="text" th:field="*{nomeLivro}" required>
+                    </div>
+
+                    <!-- Grupo de formulário para o código RFID -->
+                    <div class="form-group">
+                        <!-- Rótulo para o campo de entrada -->
+                        <label for="codigoRfid">Código RFID:</label>
+                        <!-- Campo de entrada vinculado ao campo codigoRfid, com ID para manipulação via JavaScript -->
+                        <input type="text" th:field="*{codigoRfid}" id="rfid-input">
+                    </div>
+                </div>
+
+                <!-- Terceira linha do formulário -->
+                <div class="form-row">
+                    <!-- Grupo de formulário para a classificação indicativa -->
+                    <div class="form-group">
+                        <!-- Rótulo para o campo de entrada -->
+                        <label for="classificacao">Classificação Indicativa:</label>
+                        <!-- Campo de entrada vinculado ao campo classificacao do objeto Livro -->
+                        <input type="text" th:field="*{classificacao}" placeholder="Ex: Livre, 10 anos, etc.">
+                    </div>
+
+                    <!-- Grupo de formulário para seleção de biblioteca -->
+                    <div class="form-group">
+                        <!-- Rótulo para o seletor -->
+                        <label for="biblioteca">Biblioteca:</label>
+                        <!-- Seletor vinculado ao campo biblioteca do objeto Livro -->
+                        <select th:field="*{biblioteca}" required>
+                            <!-- Opção padrão vazia -->
+                            <option value="">Selecione uma biblioteca</option>
+                            <!-- Loop Thymeleaf para gerar opções baseadas na lista de bibliotecas -->
+                            <option th:each="bib : ${bibliotecas}" th:value="${bib.id}" th:text="${bib.nome}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Ações do formulário: botões de envio e cancelamento -->
+                <div class="form-actions">
+                    <!-- Botão para submeter o formulário e cadastrar o livro -->
+                    <button type="submit" class="btn-submit" id="cadastrar-btn">📝 Cadastrar Livro</button>
+                    <!-- Botão para limpar os campos -->
+                    <button type="button" class="btn-clear" id="limpar-btn" onclick="limparCampos()">🧹 Limpar Campos</button>
+                    <!-- Link para cancelar e voltar à listagem de livros -->
+                    <a href="/listar-livros" class="btn-cancel">📋 Cancelar</a>
+                </div>
+
+                <!-- Botões para editar e excluir, inicialmente ocultos, aparecem abaixo -->
+                <div class="form-actions-edit" id="edit-actions" style="display: none;">
+                    <center>
+                    <button type="button" class="btn-edit" id="alterar-btn">✏️ Alterar Livro</button>
+                    <button type="button" class="btn-delete" id="excluir-btn">🗑️ Excluir Livro</button></center>
+                </div>
+            </form>
+        </div>
+
+        <!-- Rodapé da página -->
+        <div class="footer">
+            <!-- Texto de copyright -->
+            <p>&copy; 2024 Sistema de Biblioteca Digital</p>
+        </div>
+    </div>
+
+    <!-- Script para integração com Socket.IO para leitura de RFID -->
+    <!-- Carrega a biblioteca Socket.IO do CDN -->
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        // Estabelece conexão com o servidor Node.js no Raspberry Pi para receber dados RFID
+        const socket = io("http://192.168.1.216:3000"); // IP do Raspberry Pi
+
+        // Listener para o evento 'rfid' enviado pelo servidor
+        // Quando uma tag RFID é lida, preenche automaticamente o campo de entrada
+        socket.on("rfid", (data) => {
+            // Log no console para depuração
+            console.log("Tag recebida no site:", data);
+            // Seleciona o campo de entrada RFID pelo ID
+            const input = document.getElementById("rfid-input"); // id do seu input
+            // Define o valor do campo com a tag recebida
+            input.value = data.tag; // preenche o input
+
+            // Busca os dados do livro associado ao RFID
+            buscarLivroPorRfid(data.tag);
+        });
+
+        // Variável para armazenar o ID do livro encontrado
+        let livroId = null;
+
+        // Função para buscar livro por RFID via API
+        function buscarLivroPorRfid(rfid) {
+            fetch(`/api/livro-por-rfid?rfid=${encodeURIComponent(rfid)}`)
+                .then(response => response.json())
+                .then(livro => {
+                    if (livro) {
+                        // Armazena o ID do livro
+                        livroId = livro.id;
+                        // Preenche os campos do formulário com os dados do livro
+                        document.getElementById("numeroTombo").value = livro.numeroTombo || "";
+                        document.getElementById("nomeAutor").value = livro.nomeAutor || "";
+                        document.getElementById("nomeLivro").value = livro.nomeLivro || "";
+                        document.getElementById("rfid-input").value = livro.codigoRfid || "";
+                        document.getElementById("classificacao").value = livro.classificacao || "";
+                        document.getElementById("biblioteca").value = livro.biblioteca ? livro.biblioteca.id : "";
+                        // Mostra os botões de alterar e excluir, oculta o de cadastrar
+                        document.getElementById("cadastrar-btn").style.display = "none";
+                        document.getElementById("edit-actions").style.display = "block";
+                        console.log("Dados do livro preenchidos:", livro);
+                    } else {
+                        // Se não encontrou livro, volta ao modo cadastro
+                        livroId = null;
+                        document.getElementById("cadastrar-btn").style.display = "inline-block";
+                        document.getElementById("edit-actions").style.display = "none";
+                        console.log("Nenhum livro encontrado para o RFID:", rfid);
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar livro por RFID:", error);
+                });
+        }
+
+        // Função para buscar livro por número de tombo via API
+        function buscarLivroPorNumeroTombo(numeroTombo) {
+            fetch(`/api/livro-por-numeroTombo?numeroTombo=${encodeURIComponent(numeroTombo)}`)
+                .then(response => response.json())
+                .then(livro => {
+                    if (livro) {
+                        // Armazena o ID do livro
+                        livroId = livro.id;
+                        // Preenche os campos do formulário com os dados do livro
+                        document.getElementById("numeroTombo").value = livro.numeroTombo || "";
+                        document.getElementById("nomeAutor").value = livro.nomeAutor || "";
+                        document.getElementById("nomeLivro").value = livro.nomeLivro || "";
+                        document.getElementById("rfid-input").value = livro.codigoRfid || "";
+                        document.getElementById("classificacao").value = livro.classificacao || "";
+                        document.getElementById("biblioteca").value = livro.biblioteca ? livro.biblioteca.id : "";
+                        // Mostra os botões de alterar e excluir, oculta o de cadastrar
+                        document.getElementById("cadastrar-btn").style.display = "none";
+                        document.getElementById("edit-actions").style.display = "block";
+                        console.log("Dados do livro preenchidos:", livro);
+                    } else {
+                        // Se não encontrou livro, volta ao modo cadastro
+                        livroId = null;
+                        document.getElementById("cadastrar-btn").style.display = "inline-block";
+                        document.getElementById("edit-actions").style.display = "none";
+                        console.log("Nenhum livro encontrado para o número de tombo:", numeroTombo);
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar livro por número de tombo:", error);
+                });
+        }
+
+        // Função para alterar livro
+        function alterarLivro() {
+            if (!livroId) return;
+            const numeroTombo = document.getElementById("numeroTombo").value;
+            const nomeAutor = document.getElementById("nomeAutor").value;
+            const nomeLivro = document.getElementById("nomeLivro").value;
+            const codigoRfid = document.getElementById("rfid-input").value;
+            const classificacao = document.getElementById("classificacao").value;
+            const bibliotecaId = document.getElementById("biblioteca").value;
+
+            fetch(`/editar/${livroId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    numeroTombo: numeroTombo,
+                    nomeAutor: nomeAutor,
+                    nomeLivro: nomeLivro,
+                    codigoRfid: codigoRfid,
+                    classificacao: classificacao,
+                    biblioteca: bibliotecaId
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("Livro alterado com sucesso!");
+                    // Limpa o formulário e volta ao modo cadastro
+                    limparFormulario();
+                } else {
+                    alert("Erro ao alterar livro.");
+                }
+            })
+            .catch(error => {
+                console.error("Erro ao alterar livro:", error);
+            });
+        }
+
+        // Função para excluir livro
+        function excluirLivro() {
+            if (!livroId) return;
+            if (confirm("Tem certeza que deseja excluir este livro?")) {
+                fetch(`/excluir/${livroId}`, {
+                    method: 'GET'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Livro excluído com sucesso!");
+                        // Limpa o formulário e volta ao modo cadastro
+                        limparFormulario();
+                    } else {
+                        alert("Erro ao excluir livro.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao excluir livro:", error);
+                });
+            }
+        }
+
+        // Função para limpar o formulário e voltar ao modo cadastro
+        function limparFormulario() {
+            document.getElementById("numeroTombo").value = "";
+            document.getElementById("nomeAutor").value = "";
+            document.getElementById("nomeLivro").value = "";
+            document.getElementById("rfid-input").value = "";
+            document.getElementById("classificacao").value = "";
+            document.getElementById("biblioteca").value = "";
+            livroId = null;
+            document.getElementById("cadastrar-btn").style.display = "inline-block";
+            document.getElementById("edit-actions").style.display = "none";
+        }
+
+        // Função para limpar os campos
+        function limparCampos() {
+            document.getElementById("numeroTombo").value = "";
+            document.getElementById("nomeAutor").value = "";
+            document.getElementById("nomeLivro").value = "";
+            document.getElementById("rfid-input").value = "";
+            document.getElementById("classificacao").value = "";
+            document.getElementById("biblioteca").value = "";
+            livroId = null;
+            document.getElementById("cadastrar-btn").style.display = "inline-block";
+            document.getElementById("edit-actions").style.display = "none";
+        }
+
+        // Função debounce para atrasar a execução da busca
+        function debounce(func, delay) {
+            let timeoutId;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // Adiciona event listeners aos botões
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById("alterar-btn").addEventListener('click', alterarLivro);
+            document.getElementById("excluir-btn").addEventListener('click', excluirLivro);
+            document.getElementById("limpar-btn").addEventListener('click', limparCampos);
+
+            // Função para lidar com input no RFID
+            const handleRfidInput = debounce(function() {
+                const rfid = this.value.trim();
+                if (rfid.length > 0) {
+                    buscarLivroPorRfid(rfid);
+                } else {
+                    // Se o campo estiver vazio, volta ao modo cadastro
+                    livroId = null;
+                    document.getElementById("cadastrar-btn").style.display = "inline-block";
+                    document.getElementById("edit-actions").style.display = "none";
+                }
+            }, 500); // 500ms de delay
+
+            // Função para lidar com input no número de tombo
+            const handleNumeroTomboInput = debounce(function() {
+                const numeroTombo = this.value.trim();
+                if (numeroTombo.length > 0) {
+                    buscarLivroPorNumeroTombo(numeroTombo);
+                } else {
+                    // Se o campo estiver vazio, volta ao modo cadastro
+                    livroId = null;
+                    document.getElementById("cadastrar-btn").style.display = "inline-block";
+                    document.getElementById("edit-actions").style.display = "none";
+                }
+            }, 500); // 500ms de delay
+
+            // Adiciona event listener para buscar livro ao digitar no campo RFID
+            document.getElementById("rfid-input").addEventListener('input', handleRfidInput);
+
+            // Adiciona event listener para buscar livro ao digitar no campo número de tombo
+            document.getElementById("numeroTombo").addEventListener('input', handleNumeroTomboInput);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alugar Livros</title>
+    <link rel="stylesheet" href="/css/listar-livros.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="top-section">
+            <div class="header-row">
+                <div class="title-section">
+                    <div class="text-container">
+                        <h2>Biblioteca Digital</h2>
+                        <p class="subtitle">Sistema de Biblioteca Digital</p>
+                    </div>
+                    <nav class="menu">
+                        <button id="menu-btn">☰</button>
+                        <div class="dropdown-menu" id="dropdown-menu">
+                            <button class="dropdown-item" onclick="window.location.href='/ajuda'">❓ Ajuda</button>
+                            <button class="dropdown-item" onclick="window.location.href='/logout'">🚪 Sair</button>
+                        </div>
+                    </nav>
+                </div>
+                <nav class="navigation">
+                    <a href="/cadastro" class="nav-button primary">📝 Cadastrar</a>
+                    <a href="/inventario-controle-demo" class="nav-button secondary">📋 Inventario</a>
+                    <a href="/listar-livros" class="nav-button secondary">📋 Listar Livros</a>
+                    <a href="/alugar-livros" class="nav-button secondary">📚 Alugar Livros</a>
+                    <a href="/listar-alunos" class="nav-button secondary">👥 Listar Alunos</a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Formulário de Busca -->
+        <div class="search-section">
+            <form th:action="@{'/alugar-livros'}" method="get" class="search-form">
+                <input type="hidden" name="view" th:value="${view}">
+                <div class="search-input-group">
+                    <input type="text"
+                           name="q"
+                           th:placeholder="${view == 'historico'} ? '🔍 Buscar por livro, tombo, aluno ou CPF...' : '🔍 Buscar por título, autor, tombo ou RFID...'"
+                           class="search-input"
+                           th:value="${termoBusca != null ? termoBusca : ''}">
+                    <button type="submit" class="search-button">🔍 Pesquisar</button>
+                </div>
+            </form>
+            <div th:if="${termoBusca != null}" class="search-results-info">
+                <span th:text="'Resultados para: ' + ${termoBusca}"></span>
+                <a th:href="@{'/alugar-livros?view=' + ${view}}" class="clear-search">Limpar busca</a>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="button-section">
+                <a th:href="@{'/alugar-livros?view=disponiveis'}" class="btn-action" th:classappend="${view == 'disponiveis'} ? 'active' : ''">📚 Livros</a>
+                <a th:href="@{'/alugar-livros?view=historico'}" class="btn-action" th:classappend="${view == 'historico'} ? 'active' : ''">📜 Histórico</a>
+                <a href="/alugar-form" class="btn-action">📝 Alugar Livro</a>
+            </div>
+
+            <div class="section-header">
+                <h2 th:if="${view == 'disponiveis'}">📖 Livros Alugados</h2>
+                <h2 th:if="${view == 'historico'}">📜 Histórico de Aluguéis</h2>
+                <div class="stats" th:if="${livros != null and view == 'disponiveis'}">
+                    <span class="stat-item">Alugados: <strong th:text="${livros.size()}"></strong></span>
+                </div>
+                <div class="stats" th:if="${alugueis != null and view == 'historico'}">
+                    <span class="stat-item">Total de Aluguéis: <strong th:text="${alugueis.size()}"></strong></span>
+                </div>
+            </div>
+
+            <div th:if="${livros != null and !livros.isEmpty() and view == 'disponiveis'}" class="books-table-container">
+                <table class="books-table">
+                    <thead>
+                        <tr class="table-header">
+                            <th>Título</th>
+                            <th>Autor</th>
+                            <th>Tombo</th>
+                            <th>RFID</th>
+                            <th>Biblioteca</th>
+                            <th>Data Devolução</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="livro : ${livros}" class="table-row">
+                            <td class="table-cell" th:text="${livro.nomeLivro}"></td>
+                            <td class="table-cell" th:text="${livro.nomeAutor}"></td>
+                            <td class="table-cell" th:text="${livro.numeroTombo}"></td>
+                            <td class="table-cell" th:text="${livro.codigoRfid != null and !livro.codigoRfid.isEmpty() ? livro.codigoRfid : 'Não informado'}"></td>
+                            <td class="table-cell" th:text="${livro.biblioteca != null ? livro.biblioteca.nome : 'Não associado'}"></td>
+                            <td class="table-cell" th:text="${#temporals.format(livro.dataDevolucao, 'dd/MM/yyyy')}"></td>
+                            <td class="table-cell actions-cell">
+                                <form th:action="@{'/devolver/' + ${livro.id}}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn-action btn-rent">Devolver</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${alugueis != null and !alugueis.isEmpty() and view == 'historico'}" class="books-table-container">
+                <table class="books-table">
+                    <thead>
+                        <tr class="table-header">
+                            <th>Data Aluguel</th>
+                            <th>Livro</th>
+                            <th>Tombo</th>
+                            <th>Aluno</th>
+                            <th>CPF Aluno</th>
+                            <th>Data Devolução</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="aluguel : ${alugueis}" class="table-row">
+                            <td class="table-cell" th:text="${#temporals.format(aluguel.dataAluguel, 'dd/MM/yyyy')}"></td>
+                            <td class="table-cell" th:text="${aluguel.nomeLivro}"></td>
+                            <td class="table-cell" th:text="${aluguel.numeroTombo}"></td>
+                            <td class="table-cell" th:text="${aluguel.nomeAluno}"></td>
+                            <td class="table-cell" th:text="${aluguel.cpfAluno}"></td>
+                            <td class="table-cell" th:text="${#temporals.format(aluguel.dataDevolucao, 'dd/MM/yyyy')}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2024 Sistema de Biblioteca Digital</p>
+        </footer>
+    </div>
+
+    <script>
+        // Menu dropdown functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuBtn = document.getElementById('menu-btn');
+            const dropdownMenu = document.getElementById('dropdown-menu');
+
+            menuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('show');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!menuBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownMenu.classList.remove('show');
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

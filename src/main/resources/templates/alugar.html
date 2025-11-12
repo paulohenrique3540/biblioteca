@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aluguel de Livro</title>
+    <link rel="stylesheet" href="/css/alugar.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Aluguel de Livro</h1>
+            <p class="subtitle">Alugue um livro informando o tombo e dados do aluno</p>
+            <nav class="menu">
+                
+            </nav>
+        </div>
+
+        <div class="form-container">
+            <form action="/alugar-form" method="post" class="cadastro-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="numeroTombo">Número de Tombo:</label>
+                        <input type="text" name="numeroTombo" th:value="${numeroTombo}" id="numeroTombo-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nomeAluno">Nome do Aluno:</label>
+                        <input type="text" name="nomeAluno" id="nomeAluno-input" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cpfAluno">CPF do Aluno:</label>
+                        <input type="text" name="cpfAluno" id="cpfAluno-input" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dataNascimento">Data de Nascimento do Aluno:</label>
+                        <input type="date" name="dataNascimento" id="dataNascimento-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="dataDevolucao">Data de Devolução:</label>
+                        <input type="date" name="dataDevolucao" th:value="${dataDevolucao != null ? dataDevolucao : T(java.time.LocalDate).now().plusDays(14)}" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nomeLivro">Nome do Livro:</label>
+                        <input type="text" name="nomeLivro" th:value="${livro?.nomeLivro}" th:readonly="${livro != null}" id="nomeLivro-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="nomeAutor">Nome do Autor:</label>
+                        <input type="text" name="nomeAutor" th:value="${livro?.nomeAutor}" th:readonly="${livro != null}" id="nomeAutor-input" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="biblioteca">Biblioteca:</label>
+                        <select name="bibliotecaId" id="biblioteca-select" required>
+                            <option value="">Selecione uma biblioteca</option>
+                            <option th:each="bib : ${bibliotecas}"
+                                    th:value="${bib.id}"
+                                    th:text="${bib.nome}"
+                                    th:selected="${livro?.biblioteca?.id == bib.id}">Selecione uma biblioteca</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">📚 Alugar Livro</button>
+                    <a href="/listar-livros" class="btn-cancel">📋 Cancelar</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2024 Sistema de Biblioteca Digital</p>
+        </div>
+    </div>
+
+    <!-- Script para integração com Socket.IO para leitura de RFID -->
+    <!-- Carrega a biblioteca Socket.IO do CDN -->
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        // Estabelece conexão com o servidor Node.js no Raspberry Pi para receber dados RFID
+        const socket = io("http://192.168.1.216:3000"); // IP do Raspberry Pi
+
+        // Listener para o evento 'rfid' enviado pelo servidor
+        // Quando uma tag RFID é lida, preenche automaticamente os campos de aluno ou livro
+        socket.on("rfid", (data) => {
+            // Log no console para depuração
+            console.log("Tag recebida no site:", data);
+            // Tenta buscar aluno primeiro
+            buscarAlunoPorRfid(data.tag);
+        });
+
+        // Função para buscar aluno por RFID via API
+        function buscarAlunoPorRfid(rfid) {
+            fetch(`/api/aluno-por-rfid?rfid=${encodeURIComponent(rfid)}`)
+                .then(response => response.json())
+                .then(aluno => {
+                    if (aluno) {
+                        // Preenche os campos do formulário com os dados do aluno
+                        document.getElementById("nomeAluno-input").value = aluno.nome || "";
+                        document.getElementById("cpfAluno-input").value = aluno.cpf || "";
+                        document.getElementById("dataNascimento-input").value = aluno.dataNascimento || "";
+                        console.log("Dados do aluno preenchidos:", aluno);
+                    } else {
+                        // Se não encontrou aluno, tenta buscar livro
+                        buscarLivroPorRfid(rfid);
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar aluno por RFID:", error);
+                    // Em caso de erro, tenta buscar livro
+                    buscarLivroPorRfid(rfid);
+                });
+        }
+
+        // Função para buscar livro por RFID via API
+        function buscarLivroPorRfid(rfid) {
+            fetch(`/api/livro-por-rfid?rfid=${encodeURIComponent(rfid)}`)
+                .then(response => response.json())
+                .then(livro => {
+                    if (livro) {
+                        // Preenche os campos do formulário com os dados do livro
+                        document.getElementById("numeroTombo-input").value = livro.numeroTombo || "";
+                        document.getElementById("nomeLivro-input").value = livro.nomeLivro || "";
+                        document.getElementById("nomeAutor-input").value = livro.nomeAutor || "";
+                        // Seleciona a biblioteca no select
+                        const select = document.getElementById("biblioteca-select");
+                        if (livro.biblioteca && livro.biblioteca.id) {
+                            select.value = livro.biblioteca.id;
+                        }
+                        console.log("Dados do livro preenchidos:", livro);
+                    } else {
+                        console.log("Nenhum aluno ou livro encontrado para o RFID:", rfid);
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar livro por RFID:", error);
+                });
+        }
+
+        // Função para buscar aluno por CPF via API
+        function buscarAlunoPorCpf(cpf) {
+            fetch(`/api/aluno-por-cpf?cpf=${encodeURIComponent(cpf)}`)
+                .then(response => response.json())
+                .then(aluno => {
+                    if (aluno) {
+                        // Preenche os campos do formulário com os dados do aluno
+                        document.getElementById("nomeAluno-input").value = aluno.nome || "";
+                        document.getElementById("cpfAluno-input").value = aluno.cpf || "";
+                        document.getElementById("dataNascimento-input").value = aluno.dataNascimento || "";
+                        console.log("Dados do aluno preenchidos por CPF:", aluno);
+                    } else {
+                        console.log("Nenhum aluno encontrado para o CPF:", cpf);
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao buscar aluno por CPF:", error);
+                });
+        }
+
+        // Função debounce para atrasar a execução da busca
+        function debounce(func, delay) {
+            let timeoutId;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // Adiciona event listeners aos botões
+        document.addEventListener('DOMContentLoaded', function() {
+            // Função para lidar com input no CPF
+            const handleCpfInput = debounce(function() {
+                const cpf = this.value.trim();
+                if (cpf.length > 0) {
+                    buscarAlunoPorCpf(cpf);
+                }
+            }, 500); // 500ms de delay
+
+            // Adiciona event listener para buscar aluno ao digitar no campo CPF
+            document.getElementById("cpfAluno-input").addEventListener('input', handleCpfInput);
+        });
+    </script>
+</body>
+</html>

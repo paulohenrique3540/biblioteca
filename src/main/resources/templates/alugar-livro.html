@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmar Aluguel</title>
+    <link rel="stylesheet" href="/css/cadastro.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="top-section">
+            <div class="header">
+                <h1>📚 Biblioteca Digital</h1>
+                <p class="subtitle">Confirmar Aluguel de Livro</p>
+            </div>
+
+            <nav class="navigation">
+                <a href="/cadastro" class="nav-button primary">📝 Cadastrar</a>
+                <a href="/inventario-controle-demo" class="nav-button secondary">📋 Inventario</a>
+                <a href="/listar-livros" class="nav-button secondary">📋 Listar Livros</a>
+                <a href="/alugar-livros" class="nav-button secondary">📚 Alugar Livros</a>
+                <a href="/listar-alunos" class="nav-button secondary">👥 Listar Alunos</a>
+            </nav>
+        </div>
+
+        <div class="content-section">
+            <div class="form-container">
+                <h2>Detalhes do Livro</h2>
+                <div class="book-details">
+                    <p><strong>Título:</strong> <span th:text="${livro.nomeLivro}"></span></p>
+                    <p><strong>Autor:</strong> <span th:text="${livro.nomeAutor}"></span></p>
+                    <p><strong>Tombo:</strong> <span th:text="${livro.numeroTombo}"></span></p>
+                    <p><strong>RFID:</strong> <span th:text="${livro.codigoRfid != null ? livro.codigoRfid : 'Não informado'}"></span></p>
+                    <p><strong>Biblioteca:</strong> <span th:text="${livro.biblioteca != null ? livro.biblioteca.nome : 'Não associado'}"></span></p>
+                </div>
+
+                <div class="rental-info">
+                    <h3>Informações do Aluguel</h3>
+                    <p>Data de Aluguel: <strong>Hoje</strong></p>
+                    <p>Data de Devolução: <strong>14 dias a partir de hoje</strong></p>
+                    <p>Período: 14 dias</p>
+                </div>
+
+                <form th:action="@{'/alugar/' + ${livro.id}}" method="post" class="rental-form">
+                    <div class="student-info">
+                        <h3>Informações do Aluno</h3>
+                        <label for="nomeAluno">Nome do Aluno:</label>
+                        <input type="text" id="nomeAluno" name="nomeAluno" required>
+
+                        <label for="cpfAluno">CPF do Aluno:</label>
+                        <input type="text" id="cpfAluno" name="cpfAluno" required>
+                    </div>
+
+                    <button type="submit" class="submit-button">Confirmar Aluguel</button>
+                </form>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2024 Sistema de Biblioteca Digital</p>
+        </footer>
+    </div>
+
+</body>
+</html>

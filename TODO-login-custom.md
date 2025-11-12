@@ -1,0 +1,6 @@
+- [x] Remover dependência Spring Security do pom.xml
+- [x] Remover ou renomear WebSecurityConfig.java para desabilitar Spring Security
+- [x] Modificar LoginController.java para adicionar método POST /login que busca usuário no banco e compara senha em texto plano
+- [x] Atualizar codmy.sql para inserir senha em texto plano (ex: 'admin123')
+- [x] Adicionar lógica de sessão manual no LoginController para manter usuário logado
+- [ ] Testar funcionalidade de login custom

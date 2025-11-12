@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listagem de Livros</title>
+    <link rel="stylesheet" href="/css/listar-livros.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="top-section">
+            <div class="header-row">
+                <div class="title-section">
+                    <div class="text-container">
+                        <h2>Biblioteca Digital</h2>
+                        <p class="subtitle">Sistema de Biblioteca Digital</p>
+                    </div>
+                    <nav class="menu">
+                        <button id="menu-btn">☰</button>
+                        <div class="dropdown-menu" id="dropdown-menu">
+                            <button class="dropdown-item" onclick="window.location.href='/ajuda'">❓ Ajuda</button>
+                            <button class="dropdown-item" onclick="window.location.href='/logout'">🚪 Sair</button>
+                        </div>
+                    </nav>
+                </div>
+                <nav class="navigation">
+                    <a href="/cadastro" class="nav-button primary">📝 Cadastrar</a>
+                    <a href="/inventario-controle-demo" class="nav-button secondary">📋 Inventario</a>
+                    <a href="/listar-livros" class="nav-button secondary">📋 Listar Livros</a>
+                    <a href="/alugar-livros" class="nav-button secondary">📚 Alugar Livros</a>
+                    <a href="/listar-alunos" class="nav-button secondary">👥 Listar Alunos</a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Formulário de Busca -->
+        <div class="search-section">
+            <form th:action="@{/buscar-livros}" method="get" class="search-form">
+                <div class="search-input-group">
+
+                    <input type="text"
+
+                           name="q"
+                           th:placeholder="'🔍 Buscar por título, autor, tombo ou RFID...'"
+                           class="search-input"
+                           th:value="${termoBusca != null ? termoBusca : ''}"
+                          id="rfid-input">
+                    <button type="submit" class="search-button">🔍 Pesquisar</button>
+                </div>
+            </form>
+            <div th:if="${termoBusca != null}" class="search-results-info">
+                <span th:text="'Resultados para: ' + ${termoBusca}"></span>
+                <a href="/listar-livros" class="clear-search">Limpar busca</a>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <div class="section-header">
+                <h2>📖 Livros Cadastrados</h2>
+                <div class="stats" th:if="${livros != null}">
+                    <span class="stat-item">Total: <strong th:text="${livros.size()}"></strong></span>
+                </div>
+            </div>
+
+            <div th:if="${livros != null and !livros.isEmpty()}" class="books-table-container">
+                <table class="books-table">
+                    <thead>
+                        <tr class="table-header">
+                            <th>Título</th>
+                            <th>Autor</th>
+                            <th>Tombo</th>
+                            <th>RFID</th>
+                            <th>Biblioteca</th>
+                            <th>Classificação</th>
+                            <th>Alugado</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="livro : ${livros}" class="table-row">
+                            <td class="table-cell" th:text="${livro.nomeLivro}"></td>
+                            <td class="table-cell" th:text="${livro.nomeAutor}"></td>
+                            <td class="table-cell" th:text="${livro.numeroTombo}"></td>
+                            <td class="table-cell" th:text="${livro.codigoRfid != null and !livro.codigoRfid.isEmpty() ? livro.codigoRfid : 'Não informado'}"></td>
+                            <td class="table-cell" th:text="${livro.biblioteca != null ? livro.biblioteca.nome : 'Não associado'}"></td>
+                            <td class="table-cell" th:text="${livro.classificacao != null and !livro.classificacao.isEmpty() ? livro.classificacao : 'Não informado'}"></td>
+                            <td class="table-cell" th:text="${livro.alugado ? 'Sim' : 'Não'}"></td>
+                            <td class="table-cell" th:text="${livro.alugado ? 'Alugado' : 'Disponível'}"></td>
+                            <td class="table-cell actions-cell">
+<div class="action-buttons">
+    <a th:href="@{'/editar/' + ${livro.id}}" class="btn-action btn-edit" title="Editar livro">
+        ✏️ Editar
+    </a>
+    <a th:href="@{'/excluir/' + ${livro.id}}" class="btn-action btn-delete"
+       onclick="return confirm('Tem certeza que deseja excluir este livro?')"
+       title="Excluir livro">
+        🗑️ Excluir
+    </a>
+    <a th:if="${!livro.alugado}" th:href="@{'/alugar-form?numeroTombo=' + ${livro.numeroTombo}}" class="btn-action btn-rent" title="Alugar livro">
+        Alugar
+    </a>
+    <span th:if="${livro.alugado}" class="btn-action btn-disabled" title="Livro já alugado">
+        Alugado
+    </span>
+</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div th:if="${livros == null or livros.isEmpty()}" class="empty-state">
+                <div class="empty-icon">📚</div>
+                <h2>Nenhum livro cadastrado</h2>
+                <p>Ainda não há livros no sistema. Comece cadastrando o primeiro livro!</p>
+                <a href="/cadastro" class="action-button">Cadastrar Primeiro Livro</a>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2024 Sistema de Biblioteca Digital</p>
+            <div class="footer-links">
+
+            </div>
+        </footer>
+    </div>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        // Conecta ao servidor Node.js
+        const socket = io("http://192.168.1.216:3000"); // IP do Raspberry Pi
+
+        // Ouvindo a tag enviada pelo Python
+        socket.on("rfid", (data) => {
+            console.log("Tag recebida no site:", data);
+            const input = document.getElementById("rfid-input"); // id do seu input
+            input.value = data.tag; // preenche o input
+        });
+
+        // Menu dropdown functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuBtn = document.getElementById('menu-btn');
+            const dropdownMenu = document.getElementById('dropdown-menu');
+
+            menuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('show');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!menuBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownMenu.classList.remove('show');
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
