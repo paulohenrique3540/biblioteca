@@ -74,7 +74,26 @@
 
 	<build>
     <plugins>
-        <!-- Copiar arquivos do site para target/site -->
+
+        <!-- 1) Definir Java 21 de verdade -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.11.0</version>
+            <configuration>
+                <source>21</source>
+                <target>21</target>
+                <release>21</release>
+            </configuration>
+        </plugin>
+
+        <!-- 2) Plugin padrão do Spring Boot -->
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+
+        <!-- 3) Copiar pasta extras/ para target/site -->
         <plugin>
             <artifactId>maven-resources-plugin</artifactId>
             <version>3.3.1</version>
@@ -89,19 +108,22 @@
                         <outputDirectory>${project.build.directory}/site</outputDirectory>
                         <resources>
                             <resource>
-                                <directory>extras</directory> <!-- sua pasta de arquivos do site -->
+                                <directory>extras</directory>
                                 <includes>
                                     <include>**/*</include>
                                 </includes>
                             </resource>
                         </resources>
-                        <overwrite>true</overwrite> <!-- garante que sobrescreva arquivos se necessário -->
+                        <overwrite>true</overwrite>
                     </configuration>
                 </execution>
             </executions>
         </plugin>
+
     </plugins>
 </build>
+
+
 
 
 
