@@ -74,90 +74,35 @@
 
 	<build>
     <plugins>
-        <!-- Plugin do compilador Java -->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <annotationProcessorPaths>
-                    <path>
-                        <groupId>org.projectlombok</groupId>
-                        <artifactId>lombok</artifactId>
-                    </path>
-                </annotationProcessorPaths>
-            </configuration>
-        </plugin>
-
-        <!-- Spring Boot Maven Plugin -->
-        <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-            <configuration>
-                <excludes>
-                    <exclude>
-                        <groupId>org.projectlombok</groupId>
-                        <artifactId>lombok</artifactId>
-                    </exclude>
-                </excludes>
-            </configuration>
-        </plugin>
-
-        <!-- Plugin para copiar arquivos extras para target/site -->
+        <!-- Copiar arquivos do site para target/site -->
         <plugin>
             <artifactId>maven-resources-plugin</artifactId>
             <version>3.3.1</version>
             <executions>
                 <execution>
-                    <id>copy-extra-files</id>
-                    <phase>prepare-package</phase>
+                    <id>copy-site-files</id>
+                    <phase>package</phase>
                     <goals>
                         <goal>copy-resources</goal>
                     </goals>
                     <configuration>
-                        <!-- Pasta de destino dentro do target -->
                         <outputDirectory>${project.build.directory}/site</outputDirectory>
                         <resources>
                             <resource>
-                                <!-- Pasta que você cria com seus arquivos extras -->
-                                <directory>extras</directory>
+                                <directory>extras</directory> <!-- sua pasta de arquivos do site -->
                                 <includes>
                                     <include>**/*</include>
                                 </includes>
                             </resource>
                         </resources>
+                        <overwrite>true</overwrite> <!-- garante que sobrescreva arquivos se necessário -->
                     </configuration>
                 </execution>
             </executions>
         </plugin>
-		<plugin>
-    <artifactId>maven-resources-plugin</artifactId>
-    <version>3.3.1</version>
-    <executions>
-        <execution>
-            <id>copy-extra-files</id>
-            <phase>site</phase> <!-- não prepare-package, mas site -->
-            <goals>
-                <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-                <outputDirectory>${project.build.directory}/site</outputDirectory>
-                <resources>
-                    <resource>
-                        <directory>extras</directory>
-                        <includes>
-                            <include>**/*</include>
-                        </includes>
-                    </resource>
-                </resources>
-                <overwrite>true</overwrite> <!-- garante que arquivos sejam substituídos se já existirem -->
-            </configuration>
-        </execution>
-    </executions>
-</plugin>
-
-
     </plugins>
 </build>
+
 
 
 </project>
