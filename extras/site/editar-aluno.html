@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Aluno</title>
+    <link rel="stylesheet" href="/css/cadastro.css">
+</head>
+<body>
+
+    <div class="container">
+        <!-- Cabeçalho da página -->
+        <div class="header">
+            <h1>✏️ Editar Aluno</h1>
+            <p class="subtitle">Edite os dados do aluno selecionado</p>
+            <nav class="menu">
+                
+            </nav>
+        </div>
+
+        <!-- Container do formulário de edição -->
+        <div class="form-container">
+            <!-- Formulário que envia dados para o endpoint /editar-aluno/{id} via POST -->
+            <!-- th:object="${aluno}" vincula o formulário ao objeto Aluno passado pelo controlador -->
+            <form th:action="@{'/editar-aluno/' + ${aluno.id}}" method="post" th:object="${aluno}" class="cadastro-form">
+                <!-- Linha do formulário com dois campos lado a lado -->
+                <div class="form-row">
+                    <!-- Grupo de formulário para o nome do aluno -->
+                    <div class="form-group">
+                        <!-- Rótulo para o campo de entrada -->
+                        <label for="nome">Nome do Aluno:</label>
+                        <!-- Campo de entrada vinculado ao campo nome do objeto Aluno -->
+                        <input type="text" th:field="*{nome}" required>
+                    </div>
+
+                    <!-- Grupo de formulário para o CPF do aluno -->
+                    <div class="form-group">
+                        <!-- Rótulo para o campo de entrada -->
+                        <label for="cpf">CPF:</label>
+                        <!-- Campo de entrada vinculado ao campo cpf do objeto Aluno -->
+                        <input type="text" th:field="*{cpf}" id="cpf-input" required>
+                    </div>
+                </div>
+
+                <!-- Segunda linha do formulário -->
+                <div class="form-row">
+                    <!-- Grupo de formulário para o email -->
+                    <div class="form-group">
+                        <!-- Rótulo para o campo de entrada -->
+                        <label for="email">Email:</label>
+                        <!-- Campo de entrada vinculado ao campo email do objeto Aluno -->
+                        <input type="email" th:field="*{email}" id="email-input">
+                    </div>
+
+                    <!-- Grupo de formulário para a data de nascimento -->
+                    <div class="form-group">
+                        <!-- Rótulo para o campo de entrada -->
+                        <label for="dataNascimento">Data de Nascimento:</label>
+                        <!-- Campo de entrada vinculado ao campo dataNascimento do objeto Aluno -->
+                        <input type="date" th:field="*{dataNascimento}" required>
+                    </div>
+                </div>
+
+                <!-- Terceira linha do formulário -->
+                <div class="form-row">
+                    <!-- Grupo de formulário para o código RFID -->
+                    <div class="form-group">
+                        <!-- Rótulo para o campo de entrada -->
+                        <label for="rfid">Código RFID:</label>
+                        <!-- Campo de entrada vinculado ao campo rfid, com ID para manipulação via JavaScript -->
+                        <input type="text" th:field="*{rfid}" id="rfid-input">
+                    </div>
+                </div>
+
+                <!-- Ações do formulário: botões de envio e cancelamento -->
+                <div class="form-actions">
+                    <!-- Botão para submeter o formulário e salvar as edições -->
+                    <button type="submit" class="btn-submit">💾 Salvar Edições</button>
+                    <!-- Link para cancelar e voltar à listagem de alunos -->
+                    <a href="/listar-alunos" class="btn-cancel">📋 Cancelar</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Rodapé da página -->
+        <div class="footer">
+            <!-- Texto de copyright -->
+            <p>&copy; 2024 Sistema de Biblioteca Digital</p>
+        </div>
+    </div>
+
+    <!-- Script para integração com Socket.IO para leitura de RFID -->
+    <!-- Carrega a biblioteca Socket.IO do CDN -->
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        // Estabelece conexão com o servidor Node.js no Raspberry Pi para receber dados RFID
+        const socket = io("http://192.168.1.216:3000"); // IP do Raspberry Pi
+
+        // Listener para o evento 'rfid' enviado pelo servidor
+        // Quando uma tag RFID é lida, preenche automaticamente o campo de entrada
+        socket.on("rfid", (data) => {
+            // Log no console para depuração
+            console.log("Tag recebida no site:", data);
+            // Seleciona o campo de entrada RFID pelo ID
+            const input = document.getElementById("rfid-input"); // id do seu input
+            // Define o valor do campo com a tag recebida
+            input.value = data.tag; // preenche o input
+        });
+    </script>
+
+</body>
+</html>

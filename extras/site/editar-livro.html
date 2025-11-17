@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Livro</title>
+    <link rel="stylesheet" href="/css/cadastro.css">
+</head>
+<body>
+    <div class="container">
+        <div class="top-section">
+            <div class="header-row">
+                <div class="title-section">
+                    <div class="text-container">
+                        <h1>✏️ Editar Livro</h1>
+                        <p class="subtitle">Modifique as informações do livro</p>
+                    </div>
+                    <nav class="menu">
+                        <button id="menu-btn">☰</button>
+                        <div class="dropdown-menu" id="dropdown-menu">
+                            <button class="dropdown-item" onclick="window.location.href='/logout'">🚪 Sair</button>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <form th:action="@{'/editar/' + ${livro.id}}" method="post" th:object="${livro}" class="cadastro-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="numeroTombo">Número de Tombo:</label>
+                        <input type="text" th:field="*{numeroTombo}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nomeAutor">Nome do Autor:</label>
+                        <input type="text" th:field="*{nomeAutor}" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="nomeLivro">Nome do Livro:</label>
+                        <input type="text" th:field="*{nomeLivro}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="codigoRfid">Código RFID:</label>
+                        <input type="text" th:field="*{codigoRfid}" id="rfid-input">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="classificacao">Classificação Indicativa:</label>
+                        <input type="text" th:field="*{classificacao}" placeholder="Ex: Livre, 10 anos, etc.">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="biblioteca">Biblioteca:</label>
+                        <select th:field="*{biblioteca}" required>
+                            <option value="">Selecione uma biblioteca</option>
+                            <option th:each="bib : ${bibliotecas}" th:value="${bib.id}" th:text="${bib.nome}"
+                                    th:selected="${bib.id == livro.biblioteca?.id}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">💾 Salvar Alterações</button>
+                    <a th:href="@{/listar-livros}" class="btn-cancel">📋 Cancelar</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2024 Sistema de Biblioteca Digital</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        // Conecta ao servidor Node.js
+        const socket = io("http://192.168.1.216:3000"); // IP do Raspberry Pi
+
+        // Ouvindo a tag enviada pelo Python
+        socket.on("rfid", (data) => {
+            console.log("Tag recebida no site:", data);
+            const input = document.getElementById("rfid-input"); // id do seu input
+            input.value = data.tag; // preenche o input
+        });
+    </script>
+</body>
+</html>
