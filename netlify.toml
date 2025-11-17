@@ -1,2 +1,7 @@
+
+[build]
+  command = "chmod +x mvnw && ./mvnw clean package"
+  publish = "target/site"
+
 [build.environment]
-JAVA_VERSION = "21"
+  JAVA_VERSION = "21"
